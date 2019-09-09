@@ -44,22 +44,31 @@ class WooCommerce_Coupon_URL {
 		add_filter('woocommerce_variation_prices_price', array( &$this, 'apply_discount_to_variable_price' ), 99, 3 );
 		add_filter('woocommerce_variation_prices_regular_price', array( &$this, 'apply_discount_to_variable_price' ), 99, 3 );
 
+		/**
+		 * Handle price html
+		 */
+		add_filter('woocommerce_get_price_html', array( &$this, 'apply_discount_price_html' ), 99, 2 );
+
 		if ( is_admin() ) {}
+	}
+
+	function get_session_coupon_code() {
+
+		// Ensure that customer session is started
+		if ( !WC()->session->has_session() ) {
+			WC()->session->set_customer_session_cookie(true);
+		}
+
+		$coupon_code = WC()->session->get('coupon_code');
+
+		return $coupon_code;
 	}
 
 	function store_coupon_code_to_session() {
 		if ( isset($_GET['coupon']) ) {
 
-
-			// Ensure that customer session is started
-			if ( !WC()->session->has_session() ) {
-				WC()->session->set_customer_session_cookie(true);
-			}
-
-			// var_dump(WC()->session->get('coupon_code'));die();
-
 			// Check and register coupon code in a custom session variable
-			$coupon_code = WC()->session->get('coupon_code');
+			$coupon_code = $this->get_session_coupon_code();
 			if (empty($coupon_code)) {
 				$coupon_code = esc_attr( $_GET['coupon'] );
 				WC()->session->set( 'coupon_code', $coupon_code ); // Set the coupon code in session
@@ -70,7 +79,7 @@ class WooCommerce_Coupon_URL {
 	function add_discount_to_checkout( ) {
 
 		// Set coupon code
-		$coupon_code = WC()->session->get('coupon_code');
+		$coupon_code = $this->get_session_coupon_code();
 		if ( ! empty( $coupon_code ) && ! WC()->cart->has_discount( $coupon_code ) ){
 			WC()->cart->add_discount( $coupon_code ); // apply the coupon discount
 			WC()->session->__unset('coupon_code'); // remove coupon code from session
@@ -78,7 +87,7 @@ class WooCommerce_Coupon_URL {
 	}
 
 	function get_discounted_price($price) {
-		$coupon_code = WC()->session->get('coupon_code');
+		$coupon_code = $this->get_session_coupon_code();
 
 		/**
 		 * No coupon set
@@ -115,6 +124,15 @@ class WooCommerce_Coupon_URL {
 	function apply_discount_to_variable_price( $price, $variation, $product ) {
 		if ( is_woocommerce() ) {
 			return $this->get_discounted_price($price);
+		}
+
+		return $price;
+	}
+
+	function apply_discount_price_html( $price, $product ) {
+		if ( is_woocommerce() && $this->get_session_coupon_code() ) {
+			$regular_price = get_post_meta( $product->get_id(), '_regular_price', true);
+			return '<del>' . wc_price($regular_price) . '</del> ' . str_replace( '<ins>', ' Now:<ins>', $price );
 		}
 
 		return $price;
