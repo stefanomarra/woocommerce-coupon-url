@@ -103,11 +103,20 @@ class WooCommerce_Coupon_URL {
 			return $price;
 		}
 
+		switch ($coupon->get_discount_type()) {
+			case 'percent_product':
+			case 'percent':
+				if ( $price > 0 ) {
+					$discount = ($price / 100) * $coupon->get_amount();
+					return $price - $discount;
+				}
+				break;
+
+			case 'fixed_product':
+				return $price - $coupon->get_amount();
+				break;
+		}
 		if ( $coupon->is_type('percent_product') || $coupon->is_type('percent') ) {
-			if ( $price > 0 ) {
-				$discount = ($price / 100) * $coupon->get_amount();
-				return $price - $discount;
-			}
 		}
 
 		return $price;
