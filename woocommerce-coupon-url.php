@@ -67,6 +67,10 @@ class WooCommerce_Coupon_URL {
 	function store_coupon_code_to_session() {
 		if ( isset($_GET['coupon']) ) {
 
+			if ( !$this->is_coupon_valid_for_current_product($_GET['coupon']) ) {
+				return false;
+			}
+
 			// Check and register coupon code in a custom session variable
 			$coupon_code = $this->get_session_coupon_code();
 			if (empty($coupon_code)) {
@@ -86,7 +90,29 @@ class WooCommerce_Coupon_URL {
 		}
 	}
 
+	function is_coupon_valid_for_current_product($coupon_code = null) {
+		global $product;
+
+		if ( !$coupon_code ) {
+			return false;
+		}
+
+		$coupon = new WC_Coupon($coupon_code);
+
+		if ( isset($product) && $product ) {
+			$product_id = $product->get_id();
+			$coupon_product_ids = (array)$coupon->get_product_ids();
+
+			if ( count($coupon_product_ids) && !in_array($product_id, $coupon_product_ids) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
 	function get_discounted_price($price) {
+
 		$coupon_code = $this->get_session_coupon_code();
 
 		/**
@@ -100,6 +126,10 @@ class WooCommerce_Coupon_URL {
 
 		$WC_Discounts = new WC_Discounts();
 		if ( !$WC_Discounts->is_coupon_valid($coupon) ) {
+			return $price;
+		}
+
+		if ( !$this->is_coupon_valid_for_current_product($coupon_code) ) {
 			return $price;
 		}
 
