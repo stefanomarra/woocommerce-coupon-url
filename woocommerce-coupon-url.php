@@ -73,10 +73,16 @@ class WooCommerce_Coupon_URL {
 
 			// Check and register coupon code in a custom session variable
 			$coupon_code = $this->get_session_coupon_code();
-			if (empty($coupon_code)) {
-				$coupon_code = esc_attr( $_GET['coupon'] );
-				WC()->session->set( 'coupon_code', $coupon_code ); // Set the coupon code in session
+
+			if ( empty($coupon_code) ) {
+				// There is no coupon set in wc session
 			}
+			else {
+				// There is a coupon set in wc session
+			}
+
+			$coupon_code = esc_attr( $_GET['coupon'] );
+			WC()->session->set( 'coupon_code', $coupon_code ); // Set the coupon code in session
 		}
 	}
 
@@ -90,8 +96,12 @@ class WooCommerce_Coupon_URL {
 		}
 	}
 
-	function is_coupon_valid_for_current_product($coupon_code = null) {
+	function is_coupon_valid_for_current_product($coupon_code = null, $prod = null) {
 		global $product;
+
+		if ( !$prod ) {
+			$prod = $product;
+		}
 
 		if ( !$coupon_code ) {
 			return false;
@@ -99,8 +109,8 @@ class WooCommerce_Coupon_URL {
 
 		$coupon = new WC_Coupon($coupon_code);
 
-		if ( isset($product) && $product ) {
-			$product_id = $product->get_id();
+		if ( isset($prod) && $prod ) {
+			$product_id = $prod->get_id();
 			$coupon_product_ids = (array)$coupon->get_product_ids();
 
 			if ( count($coupon_product_ids) && !in_array($product_id, $coupon_product_ids) ) {
@@ -169,7 +179,7 @@ class WooCommerce_Coupon_URL {
 	}
 
 	function apply_discount_price_html( $price, $product ) {
-		if ( is_woocommerce() && $this->get_session_coupon_code() ) {
+		if ( is_woocommerce() && $this->is_coupon_valid_for_current_product($this->get_session_coupon_code(), $product) ) {
 			$regular_price = get_post_meta( $product->get_id(), '_regular_price', true);
 			return '<del>' . wc_price($regular_price) . '</del> ' . str_replace( '<ins>', ' Now:<ins>', $price );
 		}
