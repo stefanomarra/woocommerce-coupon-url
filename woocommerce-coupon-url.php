@@ -163,7 +163,7 @@ class WooCommerce_Coupon_URL {
 	}
 
 	function apply_discount_to_price( $price, $product ) {
-		if ( is_woocommerce() ) {
+		if ( is_woocommerce() && $this->is_coupon_valid_for_current_product($this->get_session_coupon_code(), $product) ) {
 			return $this->get_discounted_price($price);
 		}
 
@@ -171,7 +171,7 @@ class WooCommerce_Coupon_URL {
 	}
 
 	function apply_discount_to_variable_price( $price, $variation, $product ) {
-		if ( is_woocommerce() ) {
+		if ( is_woocommerce() && $this->is_coupon_valid_for_current_product($this->get_session_coupon_code(), $product) ) {
 			return $this->get_discounted_price($price);
 		}
 
