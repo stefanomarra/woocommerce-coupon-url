@@ -9,6 +9,10 @@ Author URI: https://www.stefanomarra.com
 License: GPL2
 */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 class WooCommerce_Coupon_URL {
 
 	/**
